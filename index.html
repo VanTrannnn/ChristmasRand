@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bốc thăm quà Giáng sinh</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎁%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+:root{--pine:#0f3b2e;--deep:#07261d;--berry:#c4152f;--berry-d:#8f0e22;--gold:#ecbd4b;--snow:#fdf9f3}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--snow);background:radial-gradient(ellipse at 50% 0,#1a6a4e 0,var(--pine) 40%,var(--deep) 100%);overflow-x:hidden}
+#snow{position:fixed;inset:0;pointer-events:none;z-index:0}
+main{position:relative;z-index:1;width:100%;max-width:400px;text-align:center}
+h1{font:400 2.1rem/1.25 'Pacifico',cursive;margin:0 0 6px;color:var(--snow);text-shadow:0 2px 0 var(--berry-d)}
+.note{margin:0 0 22px;font-size:.92rem;color:#d8e6dc;line-height:1.5}
+label{display:block;font-weight:600;margin-bottom:8px}
+select{width:100%;padding:14px 16px;font:inherit;font-size:1.05rem;color:var(--deep);background:var(--snow);border:3px solid var(--gold);border-radius:12px}
+.gift{position:relative;width:150px;height:150px;margin:26px auto 8px}
+.box{position:absolute;left:12px;right:12px;bottom:0;height:90px;background:var(--berry);border-radius:0 0 8px 8px;box-shadow:inset -14px 0 0 rgba(0,0,0,.14)}
+.lid{position:absolute;left:0;right:0;bottom:82px;height:34px;background:#d8203c;border-radius:6px;z-index:2;transition:transform .55s cubic-bezier(.3,1.7,.5,1);box-shadow:inset -14px 0 0 rgba(0,0,0,.12)}
+.box i,.lid i{position:absolute;left:50%;top:0;bottom:0;width:22px;margin-left:-11px;background:var(--gold)}
+.lid::before{content:"";position:absolute;left:50%;top:-22px;width:48px;height:24px;margin-left:-24px;border:7px solid var(--gold);border-bottom:0;border-radius:24px 24px 0 0}
+.gift.open .lid{transform:translate(14px,-40px) rotate(-14deg)}
+.gift.shake{animation:shake .45s infinite}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+button{font:inherit;cursor:pointer}
+#draw,.btn{width:100%;padding:15px;font-size:1.1rem;font-weight:600;color:var(--deep);background:var(--gold);border:0;border-bottom:5px solid #b8892a;border-radius:14px}
+#draw:active:not(:disabled){transform:translateY(3px);border-bottom-width:2px}
+#draw:disabled{opacity:.45;cursor:not-allowed}
+.tag{position:relative;margin:22px auto 0;padding:30px 20px 20px;max-width:300px;background:var(--snow);color:var(--deep);clip-path:polygon(14% 0,86% 0,100% 16%,100% 100%,0 100%,0 16%);border-radius:6px}
+.tag::before{content:"";position:absolute;top:10px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--pine)}
+.tag small{display:block;font-size:.85rem;color:#4b5d54}
+.tag strong{display:block;margin-top:6px;font:400 2rem/1.3 'Pacifico',cursive;color:var(--berry);word-break:break-word}
+.tag.spin strong{opacity:.55}
+.tag.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.6) rotate(-6deg);opacity:0}to{transform:none;opacity:1}}
+#done,.ghost{margin-top:18px;padding:10px 18px;color:var(--snow);background:transparent;border:2px solid rgba(253,249,243,.6);border-radius:12px}
+.hint{margin:14px 0 0;font-size:.82rem;color:#b9cfc2}
+.err{color:#ffd1d1;font-weight:600}
+.demo{margin:0 0 16px;padding:8px 12px;font-size:.82rem;color:var(--deep);background:var(--gold);border-radius:10px}
+.lnk{display:inline-block;margin-top:22px;color:var(--snow);font-size:.88rem}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.gift.shake,.tag.pop{animation:none}.lid{transition:none}}
+.qr{width:200px;max-width:100%;margin:14px auto 0;padding:12px;background:#fff;border-radius:12px}.qr svg{display:block;width:100%;height:auto}
+.share{margin-top:26px;padding-top:18px;border-top:1px solid rgba(253,249,243,.25)}
+.share .copy{display:flex;gap:8px}.share input{flex:1;min-width:0;padding:10px 12px;font:inherit;font-size:.85rem;color:var(--deep);background:var(--snow);border:2px solid var(--gold);border-radius:10px}
+.share button{padding:0 14px;font-weight:600;color:var(--snow);background:transparent;border:2px solid rgba(253,249,243,.6);border-radius:10px}
+</style>
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+<main>
+  <h1 id="title">Bốc thăm quà Giáng sinh</h1>
+  <p class="note" id="note"></p>
+
+  <div id="app">
+    <p class="demo" id="demo" hidden>Chế độ chạy thử: kết quả chỉ lưu trên máy này. Dán databaseURL của Firebase vào file để chơi chung.</p>
+    <label for="who">Bạn là ai?</label>
+    <select id="who"><option value="">Chọn tên của bạn</option></select>
+
+    <div class="gift" id="gift" aria-hidden="true">
+      <div class="lid"><i></i></div>
+      <div class="box"><i></i></div>
+    </div>
+
+    <button id="draw" disabled>Mở hộp quà</button>
+
+    <div class="tag" id="tag" hidden aria-live="polite">
+      <small>Bạn sẽ tặng quà cho</small>
+      <strong id="name"></strong>
+    </div>
+
+    <button id="done" hidden>Xong, ẩn kết quả</button>
+    <p class="hint">Mỗi người chỉ bốc một lần. Mở lại vẫn ra đúng người đã bốc. Giữ bí mật nhé!</p>
+  </div>
+  <p class="err" id="err" hidden></p>
+  <section class="share" id="share" hidden>
+    <label for="rlink">Link phòng (gửi hoặc quét QR để vào)</label>
+    <div class="copy"><input id="rlink" readonly><button id="cprl">Sao chép</button></div>
+    <div class="qr" id="qr" role="img" aria-label="Mã QR của phòng"></div>
+  </section>
+  <a class="lnk" href="tao/">Tạo phòng bốc thăm cho nhóm của bạn</a>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script type="module">
+/*@@START*/
+/* ====== CHỈNH Ở ĐÂY (chỉ làm 1 lần) ====== */
+const FIREBASE = {
+  databaseURL: "https://christmas-440f7-default-rtdb.asia-southeast1.firebasedatabase.app"   // dán địa chỉ Realtime Database vào đây. Để trống = chạy thử trên máy này
+};
+/* ========================================= */
+
+const keyOf = n => n.replace(/[.#$\[\]\/]/g, '_');
+const toArr = v => Array.isArray(v) ? v.filter(Boolean) : Object.values(v || {});
+const norm = v => (v && v.meta && v.names)
+  ? { names: toArr(v.names), title: v.meta.title || '', note: v.meta.note || '', key: v.meta.key, draws: v.draws || {} }
+  : null;
+
+/* Mỗi lần bốc: chọn ngẫu nhiên trong số người chưa ai bốc trúng, trừ chính mình.
+   Thêm 1 luật để không bị kẹt: không chọn nếu người bốc cuối cùng sẽ chỉ còn lại chính mình. */
+function choose(me, draws, NAMES) {
+  const done = new Set(Object.keys(draws)), picked = new Set(Object.values(draws));
+  const G = NAMES.filter(n => !done.has(keyOf(n)));   // người chưa bốc (gồm cả mình)
+  const R = NAMES.filter(n => !picked.has(n));        // người chưa ai bốc trúng
+  const ok = R.filter(c => {
+    if (c === me) return false;
+    const g = G.filter(n => n !== me), r = R.filter(n => n !== c);
+    return !(g.length === 1 && r.length === 1 && g[0] === r[0]);
+  });
+  return ok[Math.floor(Math.random() * ok.length)];
+}
+
+/* Chạy thử: lưu trên máy này */
+const mem = {};
+function local() {
+  const load = r => { try { const s = localStorage.getItem('xmas-demo-' + r); if (s) return JSON.parse(s); } catch {} return mem[r] || null; };
+  const save = (r, v) => { mem[r] = v; try { localStorage.setItem('xmas-demo-' + r, JSON.stringify(v)); } catch {} };
+  return {
+    demo: true,
+    async exists(room) { return !!load(room); },
+    async create(room, d) { save(room, { names: d.names, meta: { title: d.title, note: d.note, key: d.key }, draws: {} }); },
+    async info(room) { return norm(load(room)); },
+    async draw(room, me, names) {
+      const v = load(room), k = keyOf(me); v.draws = v.draws || {};
+      if (!v.draws[k]) { const p = choose(me, v.draws, names); if (p) { v.draws[k] = p; save(room, v); } }
+      return v.draws[k];
+    },
+    async reset(room) { const v = load(room); v.draws = {}; save(room, v); },
+    watch(room, cb) { const f = () => cb(norm(load(room))); f(); addEventListener('storage', f); }
+  };
+}
+
+/* Chơi thật: Firebase Realtime Database */
+async function connect() {
+  if (!FIREBASE.databaseURL) return local();
+  const base = 'https://www.gstatic.com/firebasejs/10.14.1/';
+  const [{ initializeApp }, { getDatabase, ref, get, set, runTransaction, onValue }] = await Promise.all([
+    import(base + 'firebase-app.js'), import(base + 'firebase-database.js')
+  ]);
+  const db = getDatabase(initializeApp(FIREBASE));
+  const R = (room, p) => ref(db, 'xmas/' + room + (p ? '/' + p : ''));
+  return {
+    demo: false,
+    async exists(room) { return (await get(R(room, 'meta'))).exists(); },
+    async create(room, d) {
+      const meta = { key: d.key };
+      if (d.title) meta.title = d.title;
+      if (d.note) meta.note = d.note;
+      await set(R(room, 'names'), d.names);
+      await set(R(room, 'meta'), meta);
+    },
+    async info(room) { return norm((await get(R(room))).val()); },
+    async draw(room, me, names) {   // transaction: 2 người bốc cùng lúc cũng không bị trùng
+      const k = keyOf(me);
+      const res = await runTransaction(R(room, 'draws'), cur => {
+        cur = cur || {};
+        if (cur[k]) return;                 // đã bốc rồi: giữ nguyên kết quả cũ
+        const p = choose(me, cur, names);
+        if (!p) return;
+        cur[k] = p; return cur;
+      });
+      return (res.snapshot.val() || {})[k];
+    },
+    async reset(room) { await set(R(room, 'draws'), null); },
+    watch(room, cb) { onValue(R(room), s => cb(norm(s.val()))); }
+  };
+}
+/*@@END*/
+
+const $ = id => document.getElementById(id);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const showErr = msg => { $('app').hidden = true; $('err').hidden = false; $('err').textContent = msg; };
+const ROOM = (new URLSearchParams(location.search).get('r') || '').toLowerCase();
+
+/* Tuyết rơi */
+(() => {
+  if (reduce) return;
+  const c = $('snow'), x = c.getContext('2d'); let W, H;
+  const size = () => { W = c.width = innerWidth; H = c.height = innerHeight };
+  size(); addEventListener('resize', size);
+  const f = Array.from({length: 70}, () => ({x: Math.random() * W, y: Math.random() * H, r: Math.random() * 2.4 + .8, v: Math.random() * .8 + .3, d: Math.random() * 6}));
+  (function tick() {
+    x.clearRect(0, 0, W, H); x.fillStyle = 'rgba(255,255,255,.8)'; x.beginPath();
+    for (const p of f) {
+      p.y += p.v; p.d += .01; p.x += Math.sin(p.d) * .4;
+      if (p.y > H) { p.y = -5; p.x = Math.random() * W }
+      x.moveTo(p.x + p.r, p.y); x.arc(p.x, p.y, p.r, 0, 7);
+    }
+    x.fill(); requestAnimationFrame(tick);
+  })();
+})();
+
+function start(db, info) {
+  const rurl = location.origin + location.pathname + '?r=' + ROOM;
+  $('rlink').value = rurl; $('share').hidden = false;
+  try { const q = qrcode(0, 'M'); q.addData(rurl); q.make(); $('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0 }); } catch (e) { console.error(e); }
+  $('cprl').onclick = async () => {
+    try { await navigator.clipboard.writeText(rurl); $('cprl').textContent = 'Đã sao chép'; } catch { $('rlink').select(); }
+    setTimeout(() => $('cprl').textContent = 'Sao chép', 1800);
+  };
+  const NAMES = info.names;
+  if (info.title) { $('title').textContent = info.title; document.title = info.title; }
+  $('note').textContent = info.note;
+  if (db.demo) $('demo').hidden = false;
+  const who = $('who'), draw = $('draw'), done = $('done'), tag = $('tag'), gift = $('gift'), nameEl = $('name');
+  NAMES.forEach(n => who.add(new Option(n, n)));
+  who.onchange = () => draw.disabled = !who.value;
+
+  draw.onclick = async () => {
+    const me = who.value;
+    if (!me || !confirm('Bạn là ' + me + '? Mỗi người chỉ bốc một lần.')) return;
+    draw.disabled = who.disabled = true; $('err').hidden = true;
+    gift.classList.remove('open'); gift.classList.add('shake');
+    tag.hidden = false; tag.classList.remove('pop'); tag.classList.add('spin');
+    const others = NAMES.filter(n => n !== me);
+    const t = setInterval(() => nameEl.textContent = others[Math.random() * others.length | 0], 90);
+    const wait = new Promise(r => setTimeout(r, reduce ? 0 : 2200));
+    let result = null;
+    try { result = await db.draw(ROOM, me, NAMES); } catch (e) { console.error(e); }
+    await wait;
+    clearInterval(t); gift.classList.remove('shake');
+    if (!result) {
+      tag.hidden = true; who.disabled = false; draw.disabled = false;
+      $('err').hidden = false; $('err').textContent = 'Chưa bốc được. Kiểm tra mạng rồi thử lại, hoặc báo người quản lý.';
+      return;
+    }
+    nameEl.textContent = result;
+    tag.classList.remove('spin'); tag.classList.add('pop');
+    gift.classList.add('open'); done.hidden = false;
+  };
+
+  done.onclick = () => {
+    tag.hidden = true; done.hidden = true; nameEl.textContent = '';
+    gift.classList.remove('open');
+    who.value = ''; who.disabled = false; draw.disabled = true;
+  };
+}
+
+try {
+  if (!ROOM) {
+    showErr('Chưa có phòng bốc thăm. Hãy mở link do người tổ chức gửi, hoặc tạo phòng mới ở bên dưới.');
+  } else {
+    const db = await connect(), info = await db.info(ROOM);
+    if (!info) showErr('Không tìm thấy phòng "' + ROOM + '". Kiểm tra lại link.');
+    else start(db, info);
+  }
+} catch (e) {
+  console.error(e);
+  showErr('Không kết nối được Firebase. Kiểm tra lại databaseURL và kết nối mạng.');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tạo phòng bốc thăm</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎄%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+:root{--pine:#0f3b2e;--deep:#07261d;--gold:#ecbd4b;--snow:#fdf9f3;--berry-d:#8f0e22}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:28px 16px;font-family:'Be Vietnam Pro',system-ui,sans-serif;color:var(--snow);background:radial-gradient(ellipse at 50% 0,#1a6a4e 0,var(--pine) 40%,var(--deep) 100%)}
+main{max-width:440px;margin:0 auto}
+h1{font:400 1.9rem/1.3 'Pacifico',cursive;margin:0 0 6px;text-align:center;text-shadow:0 2px 0 var(--berry-d)}
+.sub{margin:0 0 18px;text-align:center;color:#d8e6dc;font-size:.92rem}
+label{display:block;font-weight:600;margin:14px 0 6px}
+input,textarea{width:100%;padding:12px 14px;font:inherit;color:var(--deep);background:var(--snow);border:3px solid var(--gold);border-radius:12px}
+textarea{resize:vertical}
+ul{list-style:none;margin:0 0 14px;padding:0;transition:filter .25s}
+ul.blur{filter:blur(8px);user-select:none}
+li{display:flex;justify-content:space-between;gap:10px;padding:11px 14px;margin-bottom:6px;background:rgba(253,249,243,.12);border-radius:10px}
+li b{font-weight:600}
+li.wait{opacity:.5}
+li span{display:flex;gap:14px}
+.row{display:flex;gap:10px}
+.copy{display:flex;gap:8px}
+.copy input{flex:1;min-width:0}
+button{flex:1;padding:12px;font:inherit;font-weight:600;color:var(--deep);background:var(--gold);border:0;border-bottom:4px solid #b8892a;border-radius:12px;cursor:pointer}
+button:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{color:var(--snow);background:transparent;border:2px solid rgba(253,249,243,.6)}
+.copy button{flex:0 0 auto;padding:0 16px}
+.btn{width:100%;margin-top:16px;padding:15px;font-size:1.05rem}
+a{color:var(--snow)}
+.back{display:block;margin-top:20px;text-align:center;font-size:.9rem}
+.hint{margin:8px 0 0;font-size:.85rem;color:#b9cfc2}
+.err{color:#ffd1d1;font-weight:600}
+.demo{margin:0 0 16px;padding:8px 12px;font-size:.82rem;color:var(--deep);background:var(--gold);border-radius:10px}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.qr{width:200px;max-width:100%;margin:14px auto 0;padding:12px;background:#fff;border-radius:12px}.qr svg{display:block;width:100%;height:auto}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tạo phòng bốc thăm</h1>
+  <p class="sub">Nhập danh sách người chơi, rồi gửi link cho mọi người.</p>
+  <p class="demo" id="demo" hidden>Chế độ chạy thử: phòng chỉ lưu trên máy này. Dán databaseURL của Firebase vào index.html để dùng thật.</p>
+  <p class="err" id="fatal" hidden></p>
+  <div id="form">
+    <label for="title">Tên nhóm hoặc sự kiện (không bắt buộc)</label>
+    <input id="title" maxlength="60" placeholder="Giáng sinh team Marketing">
+    <label for="note">Ghi chú cho mọi người (không bắt buộc)</label>
+    <input id="note" maxlength="100" placeholder="Ngân sách 100.000đ, tặng quà ngày 24/12">
+    <label for="names">Danh sách người chơi, mỗi dòng một tên</label>
+    <textarea id="names" rows="8" placeholder="An&#10;Bình&#10;Chi"></textarea>
+    <p class="hint" id="count"></p>
+    <p class="err" id="err" hidden></p>
+    <button class="btn" id="create">Tạo phòng</button>
+  </div>
+  <div id="result" hidden>
+    <p class="sub">Phòng đã sẵn sàng. Gửi link chơi cho mọi người, giữ link quản lý cho riêng bạn.</p>
+    <label for="plink">Link chơi (gửi cho mọi người)</label>
+    <div class="copy"><input id="plink" readonly><button class="ghost" id="cp1">Sao chép</button></div>
+    <div class="qr" id="qr" role="img" aria-label="Mã QR của phòng"></div>
+    <p class="hint" style="text-align:center">Quét mã QR để vào phòng</p>
+    <label for="alink">Link quản lý (chỉ mình bạn)</label>
+    <div class="copy"><input id="alink" readonly><button class="ghost" id="cp2">Sao chép</button></div>
+    <p class="hint">Hãy lưu link quản lý lại. Máy này cũng ghi nhớ các phòng bạn đã tạo ở danh sách bên dưới.</p>
+    <a class="back" href="">Tạo phòng khác</a>
+  </div>
+  <section id="mine" hidden>
+    <label>Các phòng đã tạo trên máy này</label>
+    <ul id="minelist"></ul>
+  </section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script type="module">
+const $ = id => document.getElementById(id);
+const fatal = msg => { $('form').hidden = true; $('fatal').hidden = false; $('fatal').textContent = msg; };
+const rnd = (n, set = 'abcdefghjkmnpqrstuvwxyz23456789') =>
+  Array.from(crypto.getRandomValues(new Uint8Array(n)), b => set[b % set.length]).join('');
+const MINE = 'xmas-rooms';
+const mine = () => { try { return JSON.parse(localStorage.getItem(MINE)) || []; } catch { return []; } };
+const playUrl = c => new URL('../?r=' + c, location.href).href;
+const adminUrl = (c, k) => new URL('../quanly/?r=' + c + '&k=' + k, location.href).href;
+
+const qr = (el, text) => { try { const q = qrcode(0, 'M'); q.addData(text); q.make(); el.innerHTML = q.createSvgTag({ cellSize: 6, margin: 0 }); } catch (e) { console.error(e); } };
+const link = (href, text) => { const a = document.createElement('a'); a.href = href; a.textContent = text; return a; };
+
+function renderMine() {
+  const items = mine(), ul = $('minelist');
+  $('mine').hidden = !items.length; ul.replaceChildren();
+  items.forEach(r => {
+    const li = document.createElement('li'), t = document.createElement('b'), s = document.createElement('span');
+    t.textContent = r.title || r.code;
+    s.append(link(playUrl(r.code), 'Chơi'), link(adminUrl(r.code, r.key), 'Quản lý'));
+    li.append(t, s); ul.append(li);
+  });
+}
+const copy = (inputId, btn) => async () => {
+  try { await navigator.clipboard.writeText($(inputId).value); btn.textContent = 'Đã sao chép'; }
+  catch { $(inputId).select(); btn.textContent = 'Hãy bấm Ctrl+C'; }
+  setTimeout(() => btn.textContent = 'Sao chép', 1800);
+};
+
+(async () => {
+  /* Dùng chung cấu hình + cách lưu dữ liệu với index.html nên chỉ cần cài Firebase ở một nơi */
+  let L, db;
+  try {
+    const html = await (await fetch('../index.html', { cache: 'no-store' })).text();
+    const m = html.match(/\/\*@@START\*\/([\s\S]*?)\/\*@@END\*\//);
+    L = new Function(m[1] + '\nreturn { connect, keyOf };')();
+  } catch {
+    return fatal('Không đọc được cấu hình từ index.html. Hãy mở qua link GitHub Pages (https://…), không mở file trực tiếp.');
+  }
+  try { db = await L.connect(); }
+  catch (e) { console.error(e); return fatal('Không kết nối được Firebase. Kiểm tra databaseURL và kết nối mạng.'); }
+  if (db.demo) $('demo').hidden = false;
+  renderMine();
+
+  const parse = () => {
+    const t = $('names').value;
+    let p = t.split(/\r?\n/); if (p.length === 1) p = t.split(/[,;]/);
+    return p.map(s => s.trim().replace(/\s+/g, ' ')).filter(Boolean);
+  };
+  $('names').oninput = () => { const n = parse().length; $('count').textContent = n ? 'Đã nhập ' + n + ' người' : ''; };
+  $('cp1').onclick = copy('plink', $('cp1'));
+  $('cp2').onclick = copy('alink', $('cp2'));
+
+  $('create').onclick = async () => {
+    const names = parse(), err = $('err'); err.hidden = true;
+    const bad = m => { err.textContent = m; err.hidden = false; };
+    if (names.length < 2) return bad('Cần ít nhất 2 người.');
+    if (names.length > 60) return bad('Tối đa 60 người.');
+    if (names.some(n => n.length > 40)) return bad('Mỗi tên tối đa 40 ký tự.');
+    const seen = new Set();
+    for (const n of names) {
+      const k = L.keyOf(n).toLowerCase();
+      if (seen.has(k)) return bad('Tên bị trùng: ' + n + '. Thêm họ hoặc chữ cái để phân biệt.');
+      seen.add(k);
+    }
+    $('create').disabled = true;
+    try {
+      let code; do { code = rnd(6); } while (await db.exists(code));
+      const key = rnd(10), title = $('title').value.trim(), note = $('note').value.trim();
+      await db.create(code, { names, title, note, key });
+      try { localStorage.setItem(MINE, JSON.stringify([{ code, key, title }, ...mine()].slice(0, 20))); } catch {}
+      $('plink').value = playUrl(code); qr($('qr'), playUrl(code)); $('alink').value = adminUrl(code, key);
+      $('form').hidden = true; $('result').hidden = false; renderMine();
+    } catch (e) {
+      console.error(e);
+      bad('Không tạo được phòng. Kiểm tra mạng và phần Rules của Firebase.');
+      $('create').disabled = false;
+    }
+  };
+})();
+</script>
+</body>
+</html>
