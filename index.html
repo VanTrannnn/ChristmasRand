@@ -49,6 +49,8 @@ button{font:inherit;cursor:pointer}
 .share{margin-top:26px;padding-top:18px;border-top:1px solid rgba(253,249,243,.25)}
 .share .copy{display:flex;gap:8px}.share input{flex:1;min-width:0;padding:10px 12px;font:inherit;font-size:.85rem;color:var(--deep);background:var(--snow);border:2px solid var(--gold);border-radius:10px}
 .share button{padding:0 14px;font-weight:600;color:var(--snow);background:transparent;border:2px solid rgba(253,249,243,.6);border-radius:10px}
+#pin{width:100%;margin-top:0;padding:14px 16px;font:inherit;font-size:1.4rem;letter-spacing:.5em;text-align:center;color:var(--deep);background:var(--snow);border:3px solid var(--gold);border-radius:12px}
+#pinbox{margin-top:14px}#pinbox label{font-size:.9rem;font-weight:400;color:#d8e6dc}
 </style>
 </head>
 <body>
@@ -61,6 +63,11 @@ button{font:inherit;cursor:pointer}
     <p class="demo" id="demo" hidden>Chế độ chạy thử: kết quả chỉ lưu trên máy này. Dán databaseURL của Firebase vào file để chơi chung.</p>
     <label for="who">Bạn là ai?</label>
     <select id="who"><option value="">Chọn tên của bạn</option></select>
+
+    <div id="pinbox" hidden>
+      <label for="pin" id="pinlbl"></label>
+      <input id="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+    </div>
 
     <div class="gift" id="gift" aria-hidden="true">
       <div class="lid"><i></i></div>
@@ -75,7 +82,7 @@ button{font:inherit;cursor:pointer}
     </div>
 
     <button id="done" hidden>Xong, ẩn kết quả</button>
-    <p class="hint">Mỗi người chỉ bốc một lần. Mở lại vẫn ra đúng người đã bốc. Giữ bí mật nhé!</p>
+    <p class="hint">Mỗi người chỉ bốc một lần. Đặt mã PIN 4 số để xem lại kết quả khi cần. Giữ bí mật nhé!</p>
   </div>
   <p class="err" id="err" hidden></p>
   <section class="share" id="share" hidden>
@@ -98,7 +105,7 @@ const FIREBASE = {
 const keyOf = n => n.replace(/[.#$\[\]\/]/g, '_');
 const toArr = v => Array.isArray(v) ? v.filter(Boolean) : Object.values(v || {});
 const norm = v => (v && v.meta && v.names)
-  ? { names: toArr(v.names), title: v.meta.title || '', note: v.meta.note || '', key: v.meta.key, draws: v.draws || {} }
+  ? { names: toArr(v.names), title: v.meta.title || '', note: v.meta.note || '', key: v.meta.key, draws: v.draws || {}, pins: v.pins || {} }
   : null;
 
 /* Mỗi lần bốc: chọn ngẫu nhiên trong số người chưa ai bốc trúng, trừ chính mình.
@@ -125,12 +132,14 @@ function local() {
     async exists(room) { return !!load(room); },
     async create(room, d) { save(room, { names: d.names, meta: { title: d.title, note: d.note, key: d.key }, draws: {} }); },
     async info(room) { return norm(load(room)); },
-    async draw(room, me, names) {
-      const v = load(room), k = keyOf(me); v.draws = v.draws || {};
+    async draw(room, me, names, ph) {
+      const v = load(room), k = keyOf(me); v.draws = v.draws || {}; v.pins = v.pins || {};
+      if (v.pins[k] && v.pins[k] !== ph) return null;
+      v.pins[k] = ph; save(room, v);
       if (!v.draws[k]) { const p = choose(me, v.draws, names); if (p) { v.draws[k] = p; save(room, v); } }
       return v.draws[k];
     },
-    async reset(room) { const v = load(room); v.draws = {}; save(room, v); },
+    async reset(room) { const v = load(room); v.draws = {}; v.pins = {}; save(room, v); },
     watch(room, cb) { const f = () => cb(norm(load(room))); f(); addEventListener('storage', f); }
   };
 }
@@ -155,8 +164,11 @@ async function connect() {
       await set(R(room, 'meta'), meta);
     },
     async info(room) { return norm((await get(R(room))).val()); },
-    async draw(room, me, names) {   // transaction: 2 người bốc cùng lúc cũng không bị trùng
+    async draw(room, me, names, ph) {   // transaction: 2 người bốc cùng lúc cũng không bị trùng
       const k = keyOf(me);
+      // giữ chỗ mã PIN trước: nếu tên này đã có PIN khác thì không cho bốc
+      const pr = await runTransaction(R(room, 'pins/' + k), cur => (cur == null || cur === ph) ? ph : undefined);
+      if (!pr.committed) return null;
       const res = await runTransaction(R(room, 'draws'), cur => {
         cur = cur || {};
         if (cur[k]) return;                 // đã bốc rồi: giữ nguyên kết quả cũ
@@ -166,7 +178,7 @@ async function connect() {
       });
       return (res.snapshot.val() || {})[k];
     },
-    async reset(room) { await set(R(room, 'draws'), null); },
+    async reset(room) { await set(R(room, 'draws'), null); await set(R(room, 'pins'), null); },
     watch(room, cb) { onValue(R(room), s => cb(norm(s.val()))); }
   };
 }
@@ -208,36 +220,57 @@ function start(db, info) {
   $('note').textContent = info.note;
   if (db.demo) $('demo').hidden = false;
   const who = $('who'), draw = $('draw'), done = $('done'), tag = $('tag'), gift = $('gift'), nameEl = $('name');
+  const pin = $('pin'), pinbox = $('pinbox'), pinlbl = $('pinlbl');
+  const sha = async s => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))), b => b.toString(16).padStart(2, '0')).join('');
+  let mode = null, state = info;
   NAMES.forEach(n => who.add(new Option(n, n)));
-  who.onchange = () => draw.disabled = !who.value;
+
+  const check = () => { draw.disabled = !(mode && /^\d{4}$/.test(pin.value)); };
+  const refresh = async () => {
+    mode = null; pin.value = ''; pinbox.hidden = true; draw.disabled = true;
+    const me = who.value; if (!me) return;
+    try { state = (await db.info(ROOM)) || state; } catch (e) { console.error(e); }
+    if (who.value !== me) return;
+    mode = state.pins[keyOf(me)] ? 'view' : 'new';
+    pinlbl.textContent = mode === 'view' ? 'Bạn đã bốc rồi. Nhập mã PIN để xem lại kết quả' : 'Đặt mã PIN 4 số (dùng để xem lại kết quả sau này)';
+    draw.textContent = mode === 'view' ? 'Xem lại kết quả' : 'Mở hộp quà';
+    pinbox.hidden = false; check();
+  };
+  who.onchange = refresh;
+  pin.oninput = () => { pin.value = pin.value.replace(/\D/g, ''); check(); };
 
   draw.onclick = async () => {
-    const me = who.value;
-    if (!me || !confirm('Bạn là ' + me + '? Mỗi người chỉ bốc một lần.')) return;
-    draw.disabled = who.disabled = true; $('err').hidden = true;
+    const me = who.value, p = pin.value, k = keyOf(me); $('err').hidden = true;
+    if (!me || !/^\d{4}$/.test(p)) return;
+    const ph = await sha(ROOM + '|' + me + '|' + p);
+    const fail = m => { $('err').hidden = false; $('err').textContent = m; };
+    if (mode === 'view' && ph !== state.pins[k]) { pin.value = ''; check(); return fail('Sai mã PIN. Thử lại nhé.'); }
+    if (mode === 'new' && !confirm('Bạn là ' + me + '?\nMã PIN của bạn: ' + p + '\nHãy nhớ mã này để xem lại kết quả. Mỗi người chỉ bốc một lần.')) return;
+    draw.disabled = who.disabled = pin.disabled = true;
     gift.classList.remove('open'); gift.classList.add('shake');
     tag.hidden = false; tag.classList.remove('pop'); tag.classList.add('spin');
     const others = NAMES.filter(n => n !== me);
     const t = setInterval(() => nameEl.textContent = others[Math.random() * others.length | 0], 90);
     const wait = new Promise(r => setTimeout(r, reduce ? 0 : 2200));
-    let result = null;
-    try { result = await db.draw(ROOM, me, NAMES); } catch (e) { console.error(e); }
+    let result = mode === 'view' ? state.draws[k] : null;
+    if (!result) { try { result = await db.draw(ROOM, me, NAMES, ph); } catch (e) { console.error(e); } }
     await wait;
     clearInterval(t); gift.classList.remove('shake');
     if (!result) {
-      tag.hidden = true; who.disabled = false; draw.disabled = false;
-      $('err').hidden = false; $('err').textContent = 'Chưa bốc được. Kiểm tra mạng rồi thử lại, hoặc báo người quản lý.';
-      return;
+      tag.hidden = true; who.disabled = pin.disabled = false;
+      fail('Chưa bốc được. Kiểm tra mạng rồi thử lại, hoặc báo người quản lý.');
+      return refresh();
     }
     nameEl.textContent = result;
     tag.classList.remove('spin'); tag.classList.add('pop');
-    gift.classList.add('open'); done.hidden = false;
+    gift.classList.add('open'); done.hidden = false; pinbox.hidden = true;
   };
 
   done.onclick = () => {
     tag.hidden = true; done.hidden = true; nameEl.textContent = '';
     gift.classList.remove('open');
-    who.value = ''; who.disabled = false; draw.disabled = true;
+    who.value = ''; who.disabled = pin.disabled = false; mode = null; pin.value = ''; pinbox.hidden = true; draw.disabled = true;
+    draw.textContent = 'Mở hộp quà';
   };
 }
 
