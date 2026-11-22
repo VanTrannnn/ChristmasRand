@@ -221,7 +221,6 @@ function start(db, info) {
   if (db.demo) $('demo').hidden = false;
   const who = $('who'), draw = $('draw'), done = $('done'), tag = $('tag'), gift = $('gift'), nameEl = $('name');
   const pin = $('pin'), pinbox = $('pinbox'), pinlbl = $('pinlbl');
-  const sha = async s => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))), b => b.toString(16).padStart(2, '0')).join('');
   let mode = null, state = info;
   NAMES.forEach(n => who.add(new Option(n, n)));
 
@@ -242,7 +241,7 @@ function start(db, info) {
   draw.onclick = async () => {
     const me = who.value, p = pin.value, k = keyOf(me); $('err').hidden = true;
     if (!me || !/^\d{4}$/.test(p)) return;
-    const ph = await sha(ROOM + '|' + me + '|' + p);
+    const ph = p;   // lưu PIN dạng thường để người quản lý xem được khi có người quên
     const fail = m => { $('err').hidden = false; $('err').textContent = m; };
     if (mode === 'view' && ph !== state.pins[k]) { pin.value = ''; check(); return fail('Sai mã PIN. Thử lại nhé.'); }
     if (mode === 'new' && !confirm('Bạn là ' + me + '?\nMã PIN của bạn: ' + p + '\nHãy nhớ mã này để xem lại kết quả. Mỗi người chỉ bốc một lần.')) return;

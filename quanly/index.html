@@ -81,6 +81,7 @@ const flash = (btn, text, ok) => { btn.textContent = ok; setTimeout(() => btn.te
   const q = new URLSearchParams(location.search), room = (q.get('r') || '').toLowerCase(), k = q.get('k') || '';
   if (!room) return fatal('Thiếu mã phòng. Hãy mở bằng link quản lý bạn nhận được khi tạo phòng.');
   let cur = null;
+  const pinOf = (v, name) => { const p = (v.pins || {})[L.keyOf(name)]; return /^\d{4}$/.test(p || '') ? p : ''; };
   $('plink').value = new URL('../?r=' + room, location.href).href; qr($('qr'), $('plink').value);
 
   const render = v => {
@@ -91,7 +92,8 @@ const flash = (btn, text, ok) => { btn.textContent = ok; setTimeout(() => btn.te
       const to = v.draws[L.keyOf(name)];
       if (to) n++;
       const li = document.createElement('li'), a = document.createElement('b'), b = document.createElement('span');
-      a.textContent = name; b.textContent = to ? '→ ' + to : 'chưa bốc';
+      const pin = pinOf(v, name);
+      a.textContent = name; b.textContent = to ? '→ ' + to + (pin ? ' · PIN ' + pin : '') : 'chưa bốc';
       if (!to) li.className = 'wait';
       li.append(a, b); list.append(li);
     });
@@ -114,7 +116,7 @@ const flash = (btn, text, ok) => { btn.textContent = ok; setTimeout(() => btn.te
   };
   $('copy').onclick = async () => {
     try {
-      await navigator.clipboard.writeText(cur.names.map(n => n + ' → ' + (cur.draws[L.keyOf(n)] || '(chưa bốc)')).join('\n'));
+      await navigator.clipboard.writeText(cur.names.map(n => n + ' → ' + (cur.draws[L.keyOf(n)] || '(chưa bốc)') + (pinOf(cur, n) ? ' (PIN ' + pinOf(cur, n) + ')' : '')).join('\n'));
       flash($('copy'), 'Sao chép', 'Đã sao chép');
     } catch { flash($('copy'), 'Sao chép', 'Không sao chép được'); }
   };
