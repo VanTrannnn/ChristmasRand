@@ -51,9 +51,30 @@ button{font:inherit;cursor:pointer}
 .share button{padding:0 14px;font-weight:600;color:var(--snow);background:transparent;border:2px solid rgba(253,249,243,.6);border-radius:10px}
 #pin{width:100%;margin-top:0;padding:14px 16px;font:inherit;font-size:1.4rem;letter-spacing:.5em;text-align:center;color:var(--deep);background:var(--snow);border:3px solid var(--gold);border-radius:12px}
 #pinbox{margin-top:14px}#pinbox label{font-size:.9rem;font-weight:400;color:#d8e6dc}
+.ov{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;background:rgba(7,38,29,.78);backdrop-filter:blur(4px)}
+.dlg{width:100%;max-width:340px;padding:26px 22px 22px;text-align:center;color:var(--deep);background:var(--snow);border-radius:20px;border-top:6px solid var(--berry);box-shadow:0 20px 50px rgba(0,0,0,.45);animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+.dlg small{display:block;font-size:.85rem;color:#4b5d54}
+.dlg .who{margin:4px 0 14px;font:400 1.8rem/1.3 'Pacifico',cursive;color:var(--berry);word-break:break-word}
+.dlg .pinv{margin:6px auto 12px;padding:10px 0;font-size:2rem;font-weight:600;letter-spacing:.45em;text-indent:.45em;background:#efe7d8;border-radius:12px}
+.dlg p{margin:0 0 20px;font-size:.88rem;line-height:1.5;color:#4b5d54}
+.dlg .acts{display:flex;gap:10px}
+.dlg button{flex:1;padding:13px;font-weight:600;font-size:1rem;border-radius:12px}
+#cok{color:var(--deep);background:var(--gold);border:0;border-bottom:4px solid #b8892a}
+#cno{color:var(--deep);background:transparent;border:2px solid #c9bfae}
+@media (prefers-reduced-motion:reduce){.dlg{animation:none}}
 </style>
 </head>
 <body>
+<div class="ov" id="ov" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="cname">
+    <small>Xác nhận trước khi bốc</small>
+    <div class="who" id="cname"></div>
+    <small>Mã PIN của bạn</small>
+    <div class="pinv" id="cpin"></div>
+    <p>Hãy nhớ mã này để xem lại kết quả. Mỗi người chỉ bốc một lần.</p>
+    <div class="acts"><button id="cno">Đổi lại</button><button id="cok">Bốc thôi</button></div>
+  </div>
+</div>
 <canvas id="snow" aria-hidden="true"></canvas>
 <main>
   <h1 id="title">Bốc thăm quà Giáng sinh</h1>
@@ -207,6 +228,15 @@ const ROOM = (new URLSearchParams(location.search).get('r') || '').toLowerCase()
   })();
 })();
 
+const ask = (me, p) => new Promise(res => {
+  const ov = $('ov'); $('cname').textContent = me; $('cpin').textContent = p; ov.hidden = false; $('cok').focus();
+  const key = e => { if (e.key === 'Escape') close(false); };
+  const close = v => { ov.hidden = true; document.removeEventListener('keydown', key); res(v); };
+  $('cok').onclick = () => close(true); $('cno').onclick = () => close(false);
+  ov.onclick = e => { if (e.target === ov) close(false); };
+  document.addEventListener('keydown', key);
+});
+
 function start(db, info) {
   const rurl = location.origin + location.pathname + '?r=' + ROOM;
   $('rlink').value = rurl; $('share').hidden = false;
@@ -244,7 +274,7 @@ function start(db, info) {
     const ph = p;   // lưu PIN dạng thường để người quản lý xem được khi có người quên
     const fail = m => { $('err').hidden = false; $('err').textContent = m; };
     if (mode === 'view' && ph !== state.pins[k]) { pin.value = ''; check(); return fail('Sai mã PIN. Thử lại nhé.'); }
-    if (mode === 'new' && !confirm('Bạn là ' + me + '?\nMã PIN của bạn: ' + p + '\nHãy nhớ mã này để xem lại kết quả. Mỗi người chỉ bốc một lần.')) return;
+    if (mode === 'new' && !(await ask(me, p))) return;
     draw.disabled = who.disabled = pin.disabled = true;
     gift.classList.remove('open'); gift.classList.add('shake');
     tag.hidden = false; tag.classList.remove('pop'); tag.classList.add('spin');
